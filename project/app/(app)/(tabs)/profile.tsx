@@ -5,12 +5,34 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfileScreen() {
-  const { session } = useAuth();
+  const { session, isLoading } = useAuth();
   
   const getFirstNameLastName = (fullName: string) => {
     const names = fullName.split(' ');
     return `${names[0]} ${names[names.length - 1]}`;
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Text>Cargando perfil...</Text>
+      </View>
+    );
+  }
+
+  if (!session) {
+    return (
+      <View style={styles.container}>
+        <Text>No hay sesión activa</Text>
+        <TouchableOpacity 
+          style={styles.loginButton}
+          onPress={() => router.push('/(auth)/login')}
+        >
+          <Text style={styles.loginButtonText}>Iniciar sesión</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -19,12 +41,8 @@ export default function ProfileScreen() {
           source={{ uri: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400' }}
           style={styles.avatar}
         />
-        {session && (
-          <>
-            <Text style={styles.name}>{getFirstNameLastName(session.full_name)}</Text>
-            <Text style={styles.email}>{session.email}</Text>
-          </>
-        )}
+        <Text style={styles.name}>{getFirstNameLastName(session.user?.user_metadata?.full_name || session.user?.email || '')}</Text>
+        <Text style={styles.email}>{session.user?.email}</Text>
       </View>
 
       <View style={styles.section}>
@@ -108,5 +126,17 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: '#FF3B30',
+  },
+  loginButton: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: 'Inter_600SemiBold',
   },
 });

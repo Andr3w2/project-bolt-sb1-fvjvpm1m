@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Lock, Mail, User } from 'lucide-react-native';
+import { supabase } from '@/lib/supabase';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -10,8 +11,30 @@ export default function Register() {
   const [pin, setPin] = useState('');
 
   const handleRegister = async () => {
-    // TODO: Implement registration logic with Supabase
-    router.replace('/(app)/(tabs)');
+    try {
+      const { data: { user }, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+            pin: pin
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      if (user) {
+        router.replace('/(app)/(tabs)');
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('Ocurrió un error durante el registro');
+      }
+    }
   };
 
   return (

@@ -5,8 +5,25 @@ import type { Database } from '@/types/database';
 
 type User = Database['public']['Tables']['users']['Row'];
 
+type Session = {
+  email: any;
+  full_name: any;
+  id: any;
+  user: {
+    id: string;
+    email: string;
+    user_metadata: {
+      full_name: string;
+    };
+  };
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  token_type: string;
+};
+
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +41,6 @@ export function useAuth() {
       } else {
         setUser(null);
         setLoading(false);
-        router.replace('/(auth)/login');
       }
     });
   }, []);
@@ -96,7 +112,19 @@ export function useAuth() {
   };
 
   return {
-    session: user,
+    session: user ? {
+      user: {
+        id: user.id,
+        email: user.email,
+        user_metadata: {
+          full_name: user.full_name
+        }
+      },
+      access_token: '',
+      refresh_token: '',
+      expires_in: 0,
+      token_type: 'bearer'
+    } : null,
     isLoading: loading,
     signIn,
     signUp,
