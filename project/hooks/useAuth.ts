@@ -14,7 +14,7 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true;
     
-    const fetchPublicProfile = async () => {
+    const fetchUserProfile = async () => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
@@ -45,25 +45,13 @@ export function useAuth() {
         
         if (session) {
           setSession(session);
-          await fetchUserProfile(session.user.id);
+          await fetchUserProfile();
           setIsLoading(false);
-          
-          // Solo navegar si no estamos ya en la ruta de la app
-          if (!window.location.pathname.includes('/(app)')) {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace('/(app)/(tabs)');
-            }
-          }
         } else {
-          // Solo limpiar y redirigir si no estamos ya en la ruta de auth
-          if (!window.location.pathname.includes('/(auth)')) {
-            setSession(null);
-            setUserProfile(null);
-            setIsLoading(false);
-            router.replace('/(auth)/login');
-          }
+          setSession(null);
+          setUserProfile(null);
+          setIsLoading(false);
+          // Eliminamos la redirección automática aquí
         }
       }
     );
@@ -74,7 +62,7 @@ supabase.auth.getSession().then(({ data: { session: initialSession }, error }) =
   } else {
     setSession(initialSession);
     if (initialSession?.user) {
-      fetchUserProfile(initialSession.user.id).catch(error => {
+      fetchUserProfile().catch(error => {
         console.error('Error fetching initial user profile:', error);
       });
     }
