@@ -1,39 +1,9 @@
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { Settings, LogOut, Bell, Key } from 'lucide-react-native';
-import { router } from 'expo-router';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfileScreen() {
-  const { session, isLoading, signOut } = useAuth(); // Añadimos signOut del hook
-  
-  const getFirstNameLastName = (fullName: string) => {
-    const names = fullName.split(' ');
-    return `${names[0]} ${names[names.length - 1]}`;
-  };
-
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <Text>Cargando perfil...</Text>
-      </View>
-    );
-  }
-
-  if (!session) {
-    return (
-      <View style={styles.container}>
-        <Text>No hay sesión activa</Text>
-        <TouchableOpacity 
-          style={styles.loginButton}
-          onPress={() => router.push('/(auth)/login')}
-        >
-          <Text style={styles.loginButtonText}>Iniciar sesión</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
+  const { userProfile } = useAuth();
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -41,8 +11,8 @@ export default function ProfileScreen() {
           source={{ uri: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400' }}
           style={styles.avatar}
         />
-        <Text style={styles.name}>{getFirstNameLastName(session.user?.user_metadata?.full_name || session.user?.email || '')}</Text>
-        <Text style={styles.email}>{session.user?.email}</Text>
+        <Text style={styles.name}>{userProfile?.full_name || 'Usuario'}</Text>
+        <Text style={styles.email}>{userProfile?.email || ''}</Text>
       </View>
 
       <View style={styles.section}>
@@ -61,17 +31,7 @@ export default function ProfileScreen() {
           <Text style={styles.menuText}>Configuración</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.menuItem, styles.logoutItem]}
-          onPress={async () => {
-            try {
-              await signOut(); // Usamos el método del hook
-              router.replace('/(auth)/login');
-            } catch (error) {
-              console.error('Error al cerrar sesión:', error);
-            }
-          }}
-        >
+        <TouchableOpacity style={[styles.menuItem, styles.logoutItem]}>
           <LogOut size={24} color="#FF3B30" />
           <Text style={[styles.menuText, styles.logoutText]}>Cerrar Sesión</Text>
         </TouchableOpacity>
@@ -128,17 +88,5 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: '#FF3B30',
-  },
-  loginButton: {
-    backgroundColor: '#007AFF',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontFamily: 'Inter_600SemiBold',
   },
 });
