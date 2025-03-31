@@ -5,7 +5,9 @@ import { router } from 'expo-router';
 import { Session } from '@supabase/supabase-js';
 import { Alert } from 'react-native';
 
-type UserProfile = Database['public']['Tables']['users']['Row'];
+type UserProfile = Database['public']['Tables']['users']['Row'] & {
+  notifications?: boolean;
+};
 
 // Función auxiliar para manejar errores
 function getErrorMessage(error: unknown): string {

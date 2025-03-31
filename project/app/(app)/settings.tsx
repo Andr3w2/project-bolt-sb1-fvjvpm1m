@@ -6,13 +6,13 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function SettingsScreen() {
   const { userProfile, updateProfile, isLoading } = useAuth();
-const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(userProfile?.notifications ?? true);
   const [error, setError] = useState('');
 
   const handleSaveSettings = async () => {
     try {
       await updateProfile({
-        // Remove notifications property as it's not part of the user profile type
+        notifications: notificationsEnabled
       });
       Alert.alert('Éxito', 'Configuración guardada correctamente');
       router.back();
