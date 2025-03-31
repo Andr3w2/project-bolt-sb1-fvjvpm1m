@@ -1,35 +1,19 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Switch } from 'react-native';
 import { router } from 'expo-router';
-import { Bell, Moon, Sun, User } from 'lucide-react-native';
+import { Bell, User } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function SettingsScreen() {
   const { userProfile, updateProfile, isLoading } = useAuth();
-  const [darkMode, setDarkMode] = useState(userProfile?.preferences?.dark_mode ?? false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(userProfile?.preferences?.notifications ?? true);
+const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [error, setError] = useState('');
 
   const handleSaveSettings = async () => {
     try {
       await updateProfile({
-        preferences: {
-          dark_mode: darkMode,
-          notifications: notificationsEnabled
-        }
+        // Remove notifications property as it's not part of the user profile type
       });
-      // Actualizar estilos según el tema seleccionado
-      const themeStyles = darkMode ? {
-        container: { backgroundColor: '#121212' },
-        title: { color: '#fff' }
-      } : {
-        container: { backgroundColor: '#fff' },
-        title: { color: '#000' }
-      };
-      
-      // Aplicar estilos dinámicos
-      Object.assign(styles.container, themeStyles.container);
-      Object.assign(styles.title, themeStyles.title);
       Alert.alert('Éxito', 'Configuración guardada correctamente');
       router.back();
     } catch (err) {
@@ -44,24 +28,9 @@ export default function SettingsScreen() {
         <Text style={styles.subtitle}>Personaliza tu experiencia</Text>
       </View>
 
-      {error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : null}
+      {error && <Text style={styles.errorText}>{error}</Text>}
 
       <View style={styles.form}>
-        <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <Moon size={20} color="#666" />
-            <Text style={styles.settingLabel}>Modo oscuro</Text>
-          </View>
-          <Switch
-            value={darkMode}
-            onValueChange={setDarkMode}
-            trackColor={{ false: '#767577', true: '#007AFF' }}
-            thumbColor={darkMode ? '#fff' : '#f4f3f4'}
-          />
-        </View>
-
         <View style={styles.settingItem}>
           <View style={styles.settingInfo}>
             <Bell size={20} color="#666" />

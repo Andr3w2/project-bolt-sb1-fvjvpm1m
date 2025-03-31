@@ -5,12 +5,7 @@ import { router } from 'expo-router';
 import { Session } from '@supabase/supabase-js';
 import { Alert } from 'react-native';
 
-type UserProfile = Database['public']['Tables']['users']['Row'] & {
-  preferences?: {
-    notifications: boolean;
-    dark_mode: boolean;
-  };
-};
+type UserProfile = Database['public']['Tables']['users']['Row'];
 
 // Función auxiliar para manejar errores
 function getErrorMessage(error: unknown): string {
@@ -228,20 +223,7 @@ export function useAuth() {
 
 
 
-  const updateProfile = async (updates: Partial<UserProfile> & {
-  preferences?: {
-    dark_mode: boolean;
-    notifications: boolean;
-  };
-}) => {
-    // Inicializar preferencias si no existen
-    if (updates.preferences && !userProfile?.preferences) {
-      updates.preferences = {
-        // Remove duplicate dark_mode since it will be overwritten by updates.preferences
-// Remove notifications default since it will be set by updates.preferences
-        ...updates.preferences
-      };
-    }
+  const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!session?.user?.id) return;
     
     try {
