@@ -1,51 +1,67 @@
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { supabase } from '@/lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 
-type User = Database['public']['Tables']['users']['Row'];
-
-type Session = {
-  email: any;
-  full_name: any;
-  id: any;
-  user: {
-    id: string;
-    email: string;
-    user_metadata: {
-      full_name: string;
-    };
-  };
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  token_type: string;
-};
+type UserProfile = Database['public']['Tables']['users']['Row'];
 
 export function useAuth() {
-  const [user, setUser] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        fetchUser(session.user.id);
-      } else {
-        setLoading(false);
+    let mounted = true;
+    
+    // 1. Verificar sesión existente
+    const checkSession = async () => {
+      setIsLoading(true);
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (!mounted) return;
+      
+      if (error) {
+        console.error('Error getting session:', error);
+        setIsLoading(false);
+        return;
       }
-    });
+      
+      if (session) {
+        setSession(session);
+        await fetchUserProfile(session.user.id);
+        setIsLoading(false);
+      }
+    };
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        fetchUser(session.user.id);
-      } else {
-        setUser(null);
-        setLoading(false);
+    // 2. Configurar listener para cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        
+        console.log('Auth state changed:', event);
+        
+        if (session) {
+          setSession(session);
+          await fetchUserProfile(session.user.id);
+          setIsLoading(false);
+        } else {
+          setSession(null);
+          setUserProfile(null);
+          setIsLoading(false);
+        }
       }
-    });
+    );
+
+    checkSession();
+    
+    return () => {
+      mounted = false;
+      subscription?.unsubscribe();
+    };
   }, []);
 
-  const fetchUser = async (userId: string) => {
+  const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -55,79 +71,100 @@ export function useAuth() {
 
       if (error) throw error;
 
-      setUser(data);
+      setUserProfile(data);
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('Error fetching user profile:', error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      router.replace('/(app)/(tabs)');
+      if (data.session) {
+        setSession(data.session);
+        await fetchUserProfile(data.session.user.id);
+        router.replace('/(app)/(tabs)');
+        console.log('Session established:', data.session);
+      }
     } catch (error) {
+      setIsLoading(false);
       throw error;
     }
   };
 
   const signUp = async (email: string, password: string, fullName: string, pin: string) => {
+    setIsLoading(true);
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
       });
 
-      if (signUpError) throw signUpError;
+      if (error) throw error;
 
-      const { error: profileError } = await supabase.from('users').insert({
-        email,
-        full_name: fullName,
-        pin,
-        role: 'user',
-      });
+      if (data.user) {
+        const { error: profileError } = await supabase.from('users').insert({
+          id: data.user.id,
+          email,
+          full_name: fullName,
+          pin,
+          role: 'user',
+        });
 
-      if (profileError) throw profileError;
+        if (profileError) throw profileError;
 
-      router.replace('/(auth)/login');
+        router.replace('/(auth)/login');
+      }
     } catch (error) {
+      setIsLoading(false);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
+    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      setSession(null);
+      setUserProfile(null);
+      router.replace('/(auth)/login');
     } catch (error) {
       console.error('Error signing out:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const isAdmin = () => {
+    return userProfile?.role === 'admin';
+  };
+
   return {
-    session: user ? {
-      user: {
-        id: user.id,
-        email: user.email,
-        user_metadata: {
-          full_name: user.full_name
-        }
-      },
-      access_token: '',
-      refresh_token: '',
-      expires_in: 0,
-      token_type: 'bearer'
-    } : null,
-    isLoading: loading,
+    session,
+    userProfile,
+    isLoading,
     signIn,
     signUp,
     signOut,
+    isAdmin,
   };
 }
+setIsLoading(false);

@@ -4,40 +4,47 @@ import { Bell, Calendar, TriangleAlert as AlertTriangle, MessageCircle } from 'l
 const notifications = [
   {
     id: '1',
-    type: 'message',
+    type: 'message' as const,
     title: 'Mensaje del Administrador',
     description: 'Reunión de emergencia mañana a las 19:00',
     time: 'Hace 30 minutos',
-    priority: 'high',
+    priority: 'high' as const,
   },
   {
     id: '2',
-    type: 'event',
+    type: 'event' as const,
     title: 'Mantenimiento de Piscina',
     description: 'Se realizará mantenimiento el día 15 de marzo',
     time: 'Hace 1 hora',
-    priority: 'normal',
+    priority: 'normal' as const,
   },
   {
     id: '3',
-    type: 'incident',
+    type: 'incident' as const,
     title: 'Reporte de Ruido',
     description: 'Se ha reportado ruido excesivo en el bloque A',
     time: 'Hace 2 horas',
-    priority: 'high',
+    priority: 'high' as const,
   },
   {
     id: '4',
-    type: 'event',
+    type: 'event' as const,
     title: 'Asamblea General',
     description: 'Reunión de propietarios este sábado',
     time: 'Hace 1 día',
-    priority: 'normal',
+    priority: 'normal' as const,
   },
 ];
 
 export default function NotificationsScreen() {
-  const renderNotification = ({ item }) => {
+  const renderNotification = ({ item }: { item: { 
+    id: string;
+    type: 'message' | 'event' | 'incident';
+    title: string;
+    description: string;
+    time: string;
+    priority: 'high' | 'normal';
+  }}) => {
     const getIcon = () => {
       switch (item.type) {
         case 'event':

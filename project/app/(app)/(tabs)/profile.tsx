@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ProfileScreen() {
-  const { session, isLoading } = useAuth();
+  const { session, isLoading, signOut } = useAuth(); // Añadimos signOut del hook
   
   const getFirstNameLastName = (fullName: string) => {
     const names = fullName.split(' ');
@@ -64,9 +64,11 @@ export default function ProfileScreen() {
         <TouchableOpacity 
           style={[styles.menuItem, styles.logoutItem]}
           onPress={async () => {
-            const { error } = await supabase.auth.signOut();
-            if (!error) {
+            try {
+              await signOut(); // Usamos el método del hook
               router.replace('/(auth)/login');
+            } catch (error) {
+              console.error('Error al cerrar sesión:', error);
             }
           }}
         >
