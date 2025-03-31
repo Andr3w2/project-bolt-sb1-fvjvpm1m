@@ -1,14 +1,27 @@
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { Bell, Calendar, TriangleAlert as AlertTriangle, MessageCircle } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
-const notifications = [
+type NotificationType = 'message' | 'event' | 'incident';
+type PriorityType = 'high' | 'normal';
+
+interface NotificationItem {
+  id: string;
+  type: NotificationType;
+  title: string;
+  description: string;
+  time: string;
+  priority: PriorityType;
+}
+
+const notifications: NotificationItem[] = [
   {
     id: '1',
-    type: 'message' as const,
+    type: 'message',
     title: 'Mensaje del Administrador',
     description: 'Reunión de emergencia mañana a las 19:00',
     time: 'Hace 30 minutos',
-    priority: 'high' as const,
+    priority: 'high',
   },
   {
     id: '2',
@@ -37,68 +50,47 @@ const notifications = [
 ];
 
 export default function NotificationsScreen() {
-  const renderNotification = ({ item }: { item: { 
-    id: string;
-    type: 'message' | 'event' | 'incident';
-    title: string;
-    description: string;
-    time: string;
-    priority: 'high' | 'normal';
-  }}) => {
-    const getIcon = () => {
-      switch (item.type) {
-        case 'event':
-          return <Calendar size={24} color="#007AFF" />;
-        case 'incident':
-          return <AlertTriangle size={24} color="#FF3B30" />;
-        case 'message':
-          return <MessageCircle size={24} color="#34C759" />;
-        default:
-          return <Bell size={24} color="#007AFF" />;
-      }
-    };
+  const router = useRouter();
 
-    const getBackgroundColor = () => {
-      switch (item.priority) {
-        case 'high':
-          return '#FFF5F5';
-        default:
-          return '#fff';
-      }
-    };
-
-    const getTitleColor = () => {
-      switch (item.type) {
-        case 'incident':
-          return '#FF3B30';
-        case 'message':
-          return '#34C759';
-        default:
-          return '#000';
-      }
-    };
-
-    return (
-      <TouchableOpacity 
-        style={[
-          styles.notificationItem,
-          { backgroundColor: getBackgroundColor() }
-        ]}
-      >
-        {getIcon()}
-        <View style={styles.notificationContent}>
-          <Text style={[
-            styles.notificationTitle,
-            { color: getTitleColor() }
-          ]}>
-            {item.title}
-          </Text>
-          <Text style={styles.notificationDescription}>{item.description}</Text>
-          <Text style={styles.notificationTime}>{item.time}</Text>
-        </View>
-      </TouchableOpacity>
-    );
+  const handleNotificationPress = (item: NotificationItem) => {
+    // Add navigation logic here if needed
+    console.log('Notification pressed:', item);
   };
+
+  const getIcon = (type: NotificationType) => {
+    const iconProps = { size: 24 };
+    switch (type) {
+      case 'event': return <Calendar {...iconProps} color="#007AFF" />;
+      case 'incident': return <AlertTriangle {...iconProps} color="#FF3B30" />;
+      case 'message': return <MessageCircle {...iconProps} color="#34C759" />;
+      default: return <Bell {...iconProps} color="#007AFF" />;
+    }
+  };
+
+  const getItemStyle = (item: NotificationItem) => ({
+    backgroundColor: item.priority === 'high' ? '#FFF5F5' : '#fff',
+  });
+
+  const getTitleStyle = (type: NotificationType) => ({
+    color: type === 'incident' ? '#FF3B30' : 
+           type === 'message' ? '#34C759' : '#000',
+  });
+
+  const renderNotification = ({ item }: { item: NotificationItem }) => (
+    <TouchableOpacity 
+      style={[styles.notificationItem, getItemStyle(item)]}
+      onPress={() => handleNotificationPress(item)}
+    >
+      {getIcon(item.type)}
+      <View style={styles.notificationContent}>
+        <Text style={[styles.notificationTitle, getTitleStyle(item.type)]}>
+          {item.title}
+        </Text>
+        <Text style={styles.notificationDescription}>{item.description}</Text>
+        <Text style={styles.notificationTime}>{item.time}</Text>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
